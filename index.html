@@ -218,10 +218,10 @@ const T = {
   ageN:n=>`${n} ${pl(n,'год','года','лет')}`,weekOf:'Неделя',noTitle:'Введите текст задачи',
   login:'Вход',loginTxt:'Войдите — задачи будут сохраняться в облаке, и можно будет отправлять просьбы Мерту.',email:'E-mail',pass:'Пароль',signIn:'Войти',skip:'Продолжить без входа',
   signOut:'Выйти',account:'Аккаунт',synced:'Сохраняется в облаке',localOnly:'Только на этом телефоне',loginErr:'Неверный e-mail или пароль',netErr:'Нет интернета',
-  toMert:'Просьбы Мерту',newReq:'+ Новая просьба',sendMert:'📨 Мерту',reqTitle:'Просьба Мерту',reqPh:'Что нужно сделать?',send:'Отправить',sent:'Отправлено Мерту ✓',
+  toMert:'Просьбы',newReq:'+ Новая просьба',sendMert:'📨 Мерту',reqTitle:'Просьба Мерту',reqPh:'Что нужно сделать?',send:'Отправить',sent:'Отправлено Мерту ✓',
   bekliyor:'ждёт',onay:'принято',red:'отклонено',noReqs:'Просьб пока нет. Здесь видно, что Мерт принял или отклонил.',needLogin:'Сначала войдите (Настройки → Аккаунт)',
   calAdd:'📅 В календарь',calNeedDate:'Сначала укажите дату',family:'Семья',famPh:'Добавить в общий список…',famTxt:'Общий список семьи — его видит и Мерт.',
-  noVoice:'Голосовой ввод тут недоступен — нажмите 🎤 на клавиатуре',listening:'Говорите…',mertNote:'Мерт',reqApproved:'✅ Мерт принял: ',reqRejected:'❌ Мерт отклонил: '},
+  noVoice:'Голосовой ввод тут недоступен — нажмите 🎤 на клавиатуре',listening:'Говорите…',mertNote:'Мерт',reqApproved:'✅ Мерт принял: ',reqRejected:'❌ Мерт отклонил: ',endTime:'До (время)',fromMert:'От Мерта',myReqs:'Мои просьбы Мерту',accept:'✓ Принять',decline:'Отклонить',newFromMert:'📨 Мерт: ',declineAsk:'Короткий комментарий для Мерта (необязательно):',endErr:'Время окончания раньше начала',accepted:'Добавлено в ваши задачи — выберите день/время',myNote:'Мой ответ'},
  en:{today:'Today',week:'Week',all:'All',lessons:'Lessons',holidays:'Holidays',
   overdue:'Overdue',noDate:'No date',done:'Done',active:'Active',tomorrow:'Tomorrow',soon:'Coming up',
   newTask:'New task',editTask:'Task',titlePh:'What needs to be done?',category:'Category',date:'Date',time:'Time',
@@ -241,10 +241,10 @@ const T = {
   ageN:n=>`turns ${n}`,weekOf:'Week',noTitle:'Enter the task text',
   login:'Sign in',loginTxt:'Sign in so your tasks are saved in the cloud and you can send requests to Mert.',email:'E-mail',pass:'Password',signIn:'Sign in',skip:'Continue without signing in',
   signOut:'Sign out',account:'Account',synced:'Saved to the cloud',localOnly:'Only on this phone',loginErr:'Wrong e-mail or password',netErr:'No internet connection',
-  toMert:'Requests to Mert',newReq:'+ New request',sendMert:'📨 To Mert',reqTitle:'Request to Mert',reqPh:'What needs to be done?',send:'Send',sent:'Sent to Mert ✓',
+  toMert:'Requests',newReq:'+ New request',sendMert:'📨 To Mert',reqTitle:'Request to Mert',reqPh:'What needs to be done?',send:'Send',sent:'Sent to Mert ✓',
   bekliyor:'waiting',onay:'accepted',red:'declined',noReqs:'No requests yet. Here you see what Mert accepted or declined.',needLogin:'Sign in first (Settings → Account)',
   calAdd:'📅 Add to Calendar',calNeedDate:'Set a date first',family:'Family',famPh:'Add to the shared list…',famTxt:'Shared family list — Mert sees it too.',
-  noVoice:'Voice input is not available here — use 🎤 on the keyboard',listening:'Listening…',mertNote:'Mert',reqApproved:'✅ Mert accepted: ',reqRejected:'❌ Mert declined: '}
+  noVoice:'Voice input is not available here — use 🎤 on the keyboard',listening:'Listening…',mertNote:'Mert',reqApproved:'✅ Mert accepted: ',reqRejected:'❌ Mert declined: ',endTime:'Until (time)',fromMert:'From Mert',myReqs:'My requests to Mert',accept:'✓ Accept',decline:'Decline',newFromMert:'📨 Mert: ',declineAsk:'Short note for Mert (optional):',endErr:'End time is before start time',accepted:'Added to your tasks — set the day/time',myNote:'My reply'}
 };
 function pl(n,a,b,c){const m=n%10,h=n%100;return m===1&&h!==11?a:m>=2&&m<=4&&(h<12||h>14)?b:c}
 const t = k => T[S.lang][k];
@@ -422,7 +422,7 @@ function taskRow(tk,opts={}){
   const meta=[];
   if(opts.showDate&&tk.date)meta.push(`<span class="${late?'late':''}">${esc(tk.date===td?t('today'):tk.date===addD(td,1)?t('tomorrow'):fDay(tk.date))}</span>`);
   else if(late)meta.push(`<span class="late">${esc(fDay(tk.date))}</span>`);
-  if(tk.time)meta.push(`<span>🕑 ${esc(tk.time)}</span>`);
+  if(tk.time||tk.end)meta.push(`<span>🕑 ${esc((tk.time||'')+(tk.end?'–'+tk.end:''))}</span>`);
   meta.push(`<span class="tag" style="--c:${c.c}"><i class="dot"></i>${esc(catName(c))}</span>`);
   if(tk.rep&&tk.rep.t!=='none')meta.push('<span>🔁</span>');
   if(tk.notes)meta.push('<span>📝</span>');
@@ -623,6 +623,7 @@ function taskSheet(id,preset={}){
     <div class="fgroup">${catPicker(tk.cat)}</div>
     <div class="fgroup"><div class="f"><label>${t('date')}</label><input type="date" id="tDate" value="${tk.date||''}"></div>
      <div class="f"><label>${t('time')}</label><input type="time" id="tTime" value="${tk.time||''}"></div>
+     <div class="f"><label>${t('endTime')}</label><input type="time" id="tEnd" value="${tk.end||''}"></div>
      <div class="f"><label>${t('important')}</label><input type="checkbox" id="tPrio" ${tk.prio?'checked':''} class="sw"></div></div>
     <div class="fgroup"><div class="f"><label>${t('repeat')}</label><div class="seg" id="tRep">${[['none',t('rNone')],['daily',t('rDaily')],['weekly',t('rWeekly')],['monthly',t('rMonthly')]].map(([k,l])=>`<button type="button" data-r="${k}" class="${tk.rep.t===k?'on':''}">${l}</button>`).join('')}</div></div>
      <div class="dows" id="tDows" style="${tk.rep.t==='weekly'?'':'display:none'}">${DOWS[S.lang].map((d,i)=>`<button type="button" data-w="${i+1}" class="${(tk.rep.days||[]).includes(i+1)?'on':''}">${d}</button>`).join('')}</div></div>
@@ -631,7 +632,7 @@ function taskSheet(id,preset={}){
     ${ex?`<button class="danger" data-x="del">${t('delete')}</button>`:''}`;
   openSheet(html,el=>{
     const $=s=>el.querySelector(s);bindMics(el);
-    const cur=()=>({id:tk.id,title:$('#tTitle').value.trim(),date:$('#tDate').value,time:$('#tTime').value,notes:$('#tNotes').value.trim(),rep:tk.rep,cat:tk.cat});
+    const cur=()=>({id:tk.id,title:$('#tTitle').value.trim(),date:$('#tDate').value,time:$('#tTime').value,end:$('#tEnd').value,notes:$('#tNotes').value.trim(),rep:tk.rep,cat:tk.cat});
     $('[data-x="cal"]').onclick=()=>{const c=cur();if(!c.title){toast(t('noTitle'));return}addToCalendar(c)};
     $('[data-x="mert"]').onclick=()=>{const c=cur();if(needLogin())return;reqForm(c)};
     if(!ex)setTimeout(()=>$('#tTitle').focus(),300);
@@ -645,7 +646,7 @@ function taskSheet(id,preset={}){
     $('#tTitle').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('[data-x="save"]').click()}};
     $('[data-x="save"]').onclick=()=>{
       tk.title=$('#tTitle').value.trim();if(!tk.title){toast(t('noTitle'));$('#tTitle').focus();return}
-      tk.date=$('#tDate').value||'';tk.time=$('#tTime').value||'';tk.notes=$('#tNotes').value.trim();tk.prio=$('#tPrio').checked?1:0;
+      tk.date=$('#tDate').value||'';tk.time=$('#tTime').value||'';tk.end=$('#tEnd').value||'';if(tk.time&&tk.end&&tk.end<tk.time){toast(t('endErr'));return}tk.notes=$('#tNotes').value.trim();tk.prio=$('#tPrio').checked?1:0;
       if(tk.rep.t!=='none'&&!tk.date)tk.date=today();
       if(tk.rep.t==='monthly'&&tk.date)tk.rep.day=P(tk.date).getDate();
       tk.rep.days.sort();
@@ -755,7 +756,7 @@ function settingsSheet(){
    <div class="fgroup"><div class="f"><button id="exp" style="color:var(--accent);font-weight:600">⬆︎ ${t('exportB')}</button></div>
     <div class="f"><button id="imp" style="color:var(--accent);font-weight:600">⬇︎ ${t('importB')}</button><input type="file" id="impF" accept="application/json,.json" style="display:none"></div></div>
    <div class="sec">${t('install')}</div><div class="note">${t('installTxt')}</div>
-   <div class="note" style="color:var(--ink3);margin-top:10px">Katya's Day · v2.0</div>`;
+   <div class="note" style="color:var(--ink3);margin-top:10px">Katya's Day · v2.1</div>`;
   openSheet(html,el=>{
     const $=q=>el.querySelector(q);
     el.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.l;save();render();settingsSheet()});
@@ -808,8 +809,8 @@ function importData(file){
 }
 
 /* ================= cloud (Firebase — TERM ile aynı proje) ================= */
-const KUTU='aile/istekler/kutu', ORTAK='aile/ortak/liste';
-const CL={on:false,user:null,db:null,unsub:[],reqs:[],fam:[],pushT:null,err:'',ready:false};
+const KUTU='aile/istekler/kutu', ORTAK='aile/ortak/liste', MERT_UID='Dk3WJraGS0cgD6v0M1DFrPipUsF3';
+const CL={on:false,user:null,db:null,unsub:[],reqs:[],inc:[],fam:[],pushT:null,err:'',ready:false};
 let DEV;try{DEV=localStorage.getItem('katya.dev')||(Math.random().toString(36).slice(2,10));localStorage.setItem('katya.dev',DEV)}catch(e){DEV='d'+Date.now()}
 function cloudInit(){
   if(typeof firebase==='undefined'||!window.IZO_FIREBASE||!window.IZO_FIREBASE.apiKey){CL.ready=true;return}
@@ -818,7 +819,7 @@ function cloudInit(){
   try{CL.db.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
   firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
   firebase.auth().onAuthStateChanged(u=>{
-    CL.ready=true;CL.unsub.forEach(f=>{try{f()}catch(e){}});CL.unsub=[];CL.user=u;CL.reqs=[];CL.fam=[];
+    CL.ready=true;CL.unsub.forEach(f=>{try{f()}catch(e){}});CL.unsub=[];CL.user=u;CL.reqs=[];CL.inc=[];CL.fam=[];
     if(u)cloudBind(u);
     render();
   });
@@ -843,6 +844,14 @@ function cloudBind(u){
     for(const r of CL.reqs){const o=old.get(r.id);if(o==='bekliyor'&&r.durum!=='bekliyor')toast((r.durum==='onay'?t('reqApproved'):t('reqRejected'))+r.baslik)}
     reqBadge();if(sheetEl&&sheetEl.dataset.k==='reqs')reqsSheet();
   },()=>{}));
+  CL.unsub.push(CL.db.collection(KUTU).where('to','==',u.uid).onSnapshot(s=>{
+    CL.inc=s.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    let seen={};const first=!localStorage.getItem('katya.incSeen');try{seen=JSON.parse(localStorage.getItem('katya.incSeen')||'{}')}catch(e){}
+    const nw=CL.inc.filter(r=>r.durum==='bekliyor'&&!seen[r.id]);CL.inc.forEach(r=>seen[r.id]=1);
+    try{localStorage.setItem('katya.incSeen',JSON.stringify(seen))}catch(e){}
+    if(!first&&nw.length)toast(t('newFromMert')+nw[0].baslik);
+    reqBadge();if(sheetEl&&sheetEl.dataset.k==='reqs')reqsSheet();
+  },()=>{}));
   CL.unsub.push(CL.db.collection(ORTAK).onSnapshot(s=>{
     CL.fam=s.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>(a.done-b.done)||((a.ts||0)-(b.ts||0)));
     if(VIEW==='all'&&FILTER==='family')render();
@@ -855,7 +864,7 @@ function cloudPush(now){
 }
 function reqBadge(){
   let seen={};try{seen=JSON.parse(localStorage.getItem('katya.seen')||'{}')}catch(e){}
-  const n=CL.reqs.filter(r=>r.durum!=='bekliyor'&&!seen[r.id]).length;
+  const n=CL.reqs.filter(r=>r.durum!=='bekliyor'&&!seen[r.id]).length+CL.inc.filter(r=>r.durum==='bekliyor').length;
   const b=document.getElementById('reqBadge');if(b){b.textContent=n||'';b.classList.toggle('on',n>0)}
 }
 function markSeen(){let seen={};CL.reqs.forEach(r=>{if(r.durum!=='bekliyor')seen[r.id]=1});try{localStorage.setItem('katya.seen',JSON.stringify(seen))}catch(e){}reqBadge()}
@@ -878,22 +887,41 @@ function doSignIn(){
 }
 
 /* ---------- Mert'e istek ---------- */
+const tRange=(a,b)=>a?(a+(b?'–'+b:'')):(b?'–'+b:'');
+function reqRow(r,inc){
+  return `<div class="row rq"><div class="rbody"><div class="rt">${esc(r.baslik)}</div>
+     <div class="rm">${r.gun?`<span>📅 ${esc(fDay(r.gun))}</span>`:''}${(r.saat||r.bitis)?`<span>🕑 ${esc(tRange(r.saat,r.bitis))}</span>`:''}${r.kat?`<span>${esc(r.kat)}</span>`:''}<span>${esc(new Date(r.ts||0).toLocaleDateString(loc()))}</span></div>
+     ${r.not?`<div class="rm">📝 ${esc(r.not)}</div>`:''}${r.mertNot?`<div class="rm"><b>${t('mertNote')}:</b>&nbsp;${esc(r.mertNot)}</div>`:''}${r.katyaNot?`<div class="rm"><b>${t('myNote')}:</b>&nbsp;${esc(r.katyaNot)}</div>`:''}
+     ${inc&&r.durum==='bekliyor'?`<div class="lstat"><button class="tbtn on held" data-racc="${r.id}">${t('accept')}</button><button class="tbtn" data-rrej="${r.id}">${t('decline')}</button></div>`:''}</div>
+     ${inc&&r.durum==='bekliyor'?'':`<span class="st ${r.durum}">${t(r.durum)||r.durum}</span><button class="xbtn" data-rdel="${r.id}" aria-label="delete">×</button>`}</div>`;
+}
 function reqsSheet(){
-  const L=CL.reqs;
-  const rows=L.map(r=>`<div class="row rq"><div class="rbody"><div class="rt">${esc(r.baslik)}</div>
-     <div class="rm">${r.gun?`<span>📅 ${esc(fDay(r.gun))}${r.saat?' '+esc(r.saat):''}</span>`:''}${r.kat?`<span>${esc(r.kat)}</span>`:''}<span>${esc(new Date(r.ts||0).toLocaleDateString(loc()))}</span></div>
-     ${r.not?`<div class="rm">📝 ${esc(r.not)}</div>`:''}${r.mertNot?`<div class="rm"><b>${t('mertNote')}:</b>&nbsp;${esc(r.mertNot)}</div>`:''}</div>
-     <span class="st ${r.durum}">${t(r.durum)||r.durum}</span>${r.durum!=='bekliyor'||true?`<button class="xbtn" data-rdel="${r.id}" aria-label="delete">×</button>`:''}</div>`);
+  const inc=CL.inc.filter(r=>r.durum==='bekliyor').concat(CL.inc.filter(r=>r.durum!=='bekliyor').slice(0,10));
   const html=`<div class="shead"><button data-x="cancel">${t('cancel')}</button><h2>${t('toMert')}</h2><button data-x="new">＋</button></div>
-    ${rows.length?`<div class="list">${rows.join('')}</div>`:`<div class="list"><div class="empty">${t('noReqs')}</div></div>`}
+    ${inc.length?`<div class="sec">${t('fromMert')} <span class="n">${CL.inc.filter(r=>r.durum==='bekliyor').length}</span></div><div class="list">${inc.map(r=>reqRow(r,true)).join('')}</div>`:''}
+    <div class="sec">${t('myReqs')}</div>
+    ${CL.reqs.length?`<div class="list">${CL.reqs.map(r=>reqRow(r,false)).join('')}</div>`:`<div class="list"><div class="empty">${t('noReqs')}</div></div>`}
     <button class="addbtn" data-x="new2">${t('newReq')}</button>`;
   if(sheetEl&&sheetEl.dataset.k==='reqs'){sheetEl.innerHTML='<div class="grab"></div>'+html;bindReqs(sheetEl)}
   else openSheet(html,el=>{el.dataset.k='reqs';bindReqs(el)});
   markSeen();
 }
+function acceptReq(id){
+  const r=CL.inc.find(x=>x.id===id);if(!r)return;
+  const tk={id:uid(),title:r.baslik,cat:'personal',date:r.gun||'',time:r.saat||'',end:r.bitis||'',notes:(r.not||''),prio:0,rep:{t:'none',days:[]},done:false,created:Date.now(),fromMert:id};
+  S.tasks.push(tk);save();
+  CL.db.collection(KUTU).doc(id).update({durum:'onay',kararTs:Date.now(),gorevId:tk.id}).catch(e=>toast('⚠️ '+(e.code||e)));
+  toast(t('accepted'));closeSheet(true);render();setTimeout(()=>taskSheet(tk.id),50);
+}
+function rejectReq(id){
+  const n=prompt(t('declineAsk'),'');if(n===null)return;
+  CL.db.collection(KUTU).doc(id).update({durum:'red',kararTs:Date.now(),katyaNot:String(n||'').trim()}).catch(e=>toast('⚠️ '+(e.code||e)));
+}
 function bindReqs(el){
   el.querySelector('[data-x="cancel"]').onclick=()=>closeSheet();
   el.querySelector('[data-x="new"]').onclick=el.querySelector('[data-x="new2"]').onclick=()=>reqForm({});
+  el.querySelectorAll('[data-racc]').forEach(b=>b.onclick=()=>acceptReq(b.dataset.racc));
+  el.querySelectorAll('[data-rrej]').forEach(b=>b.onclick=()=>rejectReq(b.dataset.rrej));
   el.querySelectorAll('[data-rdel]').forEach(b=>b.onclick=()=>{if(confirm(t('confirmDel')))CL.db.collection(KUTU).doc(b.dataset.rdel).delete().catch(e=>toast('⚠️ '+(e.code||e)))});
 }
 function reqForm(pre){
@@ -901,7 +929,8 @@ function reqForm(pre){
   const html=head(t('reqTitle'),t('send'))+
    `<div class="fgroup"><div class="f"><input class="big" id="rqT" placeholder="${t('reqPh')}" value="${esc(pre.title||'')}"><button type="button" class="mic" data-mic="rqT">🎤</button></div></div>
     <div class="fgroup"><div class="f"><label>${t('date')}</label><input type="date" id="rqD" value="${pre.date||''}"></div>
-     <div class="f"><label>${t('time')}</label><input type="time" id="rqH" value="${pre.time||''}"></div></div>
+     <div class="f"><label>${t('time')}</label><input type="time" id="rqH" value="${pre.time||''}"></div>
+     <div class="f"><label>${t('endTime')}</label><input type="time" id="rqE" value="${pre.end||''}"></div></div>
     <div class="fgroup"><div class="f col"><textarea id="rqN" placeholder="${t('notesPh')}">${esc(pre.notes||'')}</textarea></div></div>`;
   openSheet(html,el=>{
     const $=q=>el.querySelector(q);bindMics(el);
@@ -909,7 +938,8 @@ function reqForm(pre){
     $('[data-x="cancel"]').onclick=()=>closeSheet();
     $('[data-x="save"]').onclick=()=>{
       const b=$('#rqT').value.trim();if(!b){$('#rqT').focus();return}
-      const doc={from:CL.user.uid,fromAd:'Katya',baslik:b,not:$('#rqN').value.trim(),gun:$('#rqD').value||'',saat:$('#rqH').value||'',
+      const h1=$('#rqH').value||'',h2=$('#rqE').value||'';if(h1&&h2&&h2<h1){toast(t('endErr'));return}
+      const doc={from:CL.user.uid,to:MERT_UID,fromAd:'Katya',baslik:b,not:$('#rqN').value.trim(),gun:$('#rqD').value||'',saat:h1,bitis:h2,
         kat:pre.cat?catName(cat(pre.cat)):'',durum:'bekliyor',ts:Date.now()};
       $('[data-x="save"]').disabled=true;
       CL.db.collection(KUTU).add(doc).then(()=>{toast(t('sent'));closeSheet()}).catch(e=>{toast('⚠️ '+(e.code||e));$('[data-x="save"]').disabled=false});
@@ -923,7 +953,7 @@ function addToCalendar(tk){
   if(!tk.date){toast(t('calNeedDate'));return}
   const d=tk.date.replace(/-/g,''),now=new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z';
   let dt,alarm;
-  if(tk.time){const[h,m]=tk.time.split(':').map(Number);const e=new Date(P(tk.date));e.setHours(h,m+60);
+  if(tk.time){const[h,m]=tk.time.split(':').map(Number);const e=new Date(P(tk.date));if(tk.end){const[h2,m2]=tk.end.split(':').map(Number);e.setHours(h2,m2)}else e.setHours(h,m+60);
     const f=x=>`${x.getFullYear()}${pad(x.getMonth()+1)}${pad(x.getDate())}T${pad(x.getHours())}${pad(x.getMinutes())}00`;
     const st=new Date(P(tk.date));st.setHours(h,m);
     dt=`DTSTART;TZID=Europe/Istanbul:${f(st)}\r\nDTEND;TZID=Europe/Istanbul:${f(e)}`;alarm='-PT30M';}
