@@ -362,14 +362,26 @@ function myDaysOfYear(y){
   return S.mydays.map(m=>{let d=`${y}-${m.md}`;if(m.md==='02-29'&&!(y%4===0&&(y%100||y%400===0)))d=`${y}-02-28`;
     return {d,c:'me',ru:m.name,en:m.name,me:m.id,age:m.y?y-m.y:0}});
 }
+const SPORT_DEF={"v":"2026-10-04","m":[{"d":"2026-09-25","t":"20:45","s":"bb","c":"el","o":"Virtus Bologna","h":1},{"d":"2026-09-29","t":"20:45","s":"bb","c":"el","o":"Bayern München","h":1},{"d":"2026-10-02","t":"20:45","s":"bb","c":"el","o":"Dubai Basketball","h":1},{"d":"2026-10-08","t":"21:15","s":"bb","c":"el","o":"Panathinaikos","h":0},{"d":"2026-10-10","t":"19:00","s":"fb","c":"sl","o":"Çaykur Rizespor","h":0},{"d":"2026-10-13","t":"20:45","s":"bb","c":"el","o":"Žalgiris Kaunas","h":1},{"d":"2026-10-14","t":"22:00","s":"fb","c":"ucl","o":"Aston Villa","h":0},{"d":"2026-10-15","t":"20:45","s":"bb","c":"el","o":"Partizan","h":1},{"d":"2026-10-17","t":"","s":"fb","c":"sl","o":"Alanyaspor","h":1},{"d":"2026-10-20","t":"19:45","s":"fb","c":"ucl","o":"Slavia Praha","h":1},{"d":"2026-10-23","t":"21:15","s":"bb","c":"el","o":"Olympiacos","h":0},{"d":"2026-10-26","t":"21:30","s":"fb","c":"sl","o":"Galatasaray","h":0},{"d":"2026-10-27","t":"20:30","s":"bb","c":"el","o":"Valencia Basket","h":0},{"d":"2026-10-29","t":"20:45","s":"bb","c":"el","o":"Real Madrid","h":0},{"d":"2026-11-04","t":"20:45","s":"fb","c":"ucl","o":"Liverpool","h":1},{"d":"2026-11-04","t":"20:45","s":"bb","c":"el","o":"Baskonia","h":1},{"d":"2026-11-11","t":"20:45","s":"bb","c":"el","o":"Paris Basketball","h":0},{"d":"2026-11-17","t":"20:45","s":"bb","c":"el","o":"LDLC ASVEL","h":1},{"d":"2026-11-19","t":"20:30","s":"bb","c":"el","o":"Armani Milano","h":0},{"d":"2026-11-24","t":"21:00","s":"bb","c":"el","o":"FC Barcelona","h":0},{"d":"2026-11-25","t":"23:00","s":"fb","c":"ucl","o":"Shakhtar Donetsk","h":0},{"d":"2026-12-03","t":"20:45","s":"bb","c":"el","o":"Crvena Zvezda","h":1},{"d":"2026-12-09","t":"23:00","s":"fb","c":"ucl","o":"LASK","h":0},{"d":"2026-12-10","t":"20:45","s":"bb","c":"el","o":"Anadolu Efes","h":1},{"d":"2026-12-13","t":"19:00","s":"fb","c":"sl","o":"Trabzonspor","h":1},{"d":"2026-12-15","t":"20:45","s":"bb","c":"el","o":"Hapoel Tel Aviv","h":1},{"d":"2026-12-17","t":"20:45","s":"bb","c":"el","o":"Maccabi Tel Aviv","h":1},{"d":"2026-12-22","t":"20:00","s":"bb","c":"el","o":"Beşiktaş","h":0},{"d":"2026-12-29","t":"20:45","s":"bb","c":"el","o":"Panathinaikos","h":1},{"d":"2027-01-07","t":"20:30","s":"bb","c":"el","o":"Anadolu Efes","h":0},{"d":"2027-01-12","t":"20:00","s":"bb","c":"el","o":"Dubai Basketball","h":0},{"d":"2027-01-15","t":"20:45","s":"bb","c":"el","o":"Partizan","h":0},{"d":"2027-01-20","t":"20:45","s":"fb","c":"ucl","o":"Villarreal","h":1},{"d":"2027-01-21","t":"20:45","s":"bb","c":"el","o":"Beşiktaş","h":1},{"d":"2027-01-27","t":"23:00","s":"fb","c":"ucl","o":"Atlético Madrid","h":0},{"d":"2027-01-29","t":"20:45","s":"bb","c":"el","o":"Real Madrid","h":1},{"d":"2027-02-02","t":"20:30","s":"bb","c":"el","o":"Baskonia","h":0},{"d":"2027-02-05","t":"20:00","s":"bb","c":"el","o":"LDLC ASVEL","h":0},{"d":"2027-02-12","t":"20:45","s":"bb","c":"el","o":"Armani Milano","h":1},{"d":"2027-03-05","t":"20:00","s":"bb","c":"el","o":"Crvena Zvezda","h":0},{"d":"2027-03-09","t":"20:30","s":"bb","c":"el","o":"Virtus Bologna","h":0},{"d":"2027-03-12","t":"20:45","s":"bb","c":"el","o":"Valencia Basket","h":1},{"d":"2027-03-18","t":"20:45","s":"bb","c":"el","o":"Paris Basketball","h":1},{"d":"2027-03-23","t":"20:00","s":"bb","c":"el","o":"Hapoel Tel Aviv","h":0},{"d":"2027-03-26","t":"20:45","s":"bb","c":"el","o":"FC Barcelona","h":1},{"d":"2027-04-01","t":"20:05","s":"bb","c":"el","o":"Maccabi Tel Aviv","h":0},{"d":"2027-04-06","t":"20:45","s":"bb","c":"el","o":"Olympiacos","h":1},{"d":"2027-04-08","t":"20:30","s":"bb","c":"el","o":"Bayern München","h":0},{"d":"2027-04-15","t":"20:00","s":"bb","c":"el","o":"Žalgiris Kaunas","h":0}]};
+let SPORT=SPORT_DEF;
+try{const c=JSON.parse(localStorage.getItem('katya.sport')||'null');if(c&&c.v>SPORT.v)SPORT=c}catch(e){}
+fetch('sport.json?'+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{if(d&&d.m&&d.v>=SPORT.v){const ch=d.v!==SPORT.v;SPORT=d;try{localStorage.setItem('katya.sport',JSON.stringify(d))}catch(e){}if(ch)render()}}).catch(()=>{});
+const COMP={ru:{sl:'Суперлига',ucl:'Лига чемпионов',el:'Евролига'},en:{sl:'Süper Lig',ucl:'Champions League',el:'EuroLeague'}};
+function sportsIn(a,b){
+  return SPORT.m.filter(m=>m.d>=a&&m.d<=b&&(m.s==='fb'?S.showFB!==false:S.showBB!==false)).map(m=>{
+    const n=m.h?`Fenerbahçe – ${m.o}`:`${m.o} – Fenerbahçe`;
+    const mk=l=>`${n} · ${m.t||(l==='ru'?'время уточн.':'time TBC')} · ${COMP[l][m.c]}`;
+    return {d:m.d,c:m.s,ru:mk('ru'),en:mk('en'),sport:1,t:m.t};
+  });
+}
 function holsIn(a,b){
   const out=[];for(let y=+a.slice(0,4);y<=+b.slice(0,4);y++){
     for(const h of holidaysOfYear(y).concat(myDaysOfYear(y)))
       if(h.d>=a&&h.d<=b&&(h.c==='me'||h.c==='both'&&(S.showTR||S.showRU)||h.c==='tr'&&S.showTR||h.c==='ru'&&S.showRU))out.push(h);
   }
-  return out.sort((x,y)=>x.d<y.d?-1:x.d>y.d?1:0);
+  return out.concat(sportsIn(a,b)).sort((x,y)=>x.d<y.d?-1:x.d>y.d?1:(x.sport?1:0)-(y.sport?1:0));
 }
-const flag=h=>h.c==='me'?'🎂':h.c==='tr'?'🇹🇷':h.c==='ru'?'🇷🇺':(S.showTR&&S.showRU?'🇹🇷🇷🇺':S.showTR?'🇹🇷':'🇷🇺');
+const flag=h=>h.c==='fb'?'⚽':h.c==='bb'?'🏀':h.c==='me'?'🎂':h.c==='tr'?'🇹🇷':h.c==='ru'?'🇷🇺':(S.showTR&&S.showRU?'🇹🇷🇷🇺':S.showTR?'🇹🇷':'🇷🇺');
 const isOff=h=>h.off==='both'?(S.showTR||S.showRU):h.off==='tr'?S.showTR:h.off==='ru'?S.showRU:false;
 const hName=h=>h[S.lang]+(h.c==='me'&&h.age>0?` · ${t('ageN')(h.age)}`:'');
 function holChip(h){return `<span class="hchip ${isOff(h)?'off':''}">${flag(h)} ${esc(hName(h))}</span>`}
@@ -557,14 +569,16 @@ function vLessons(){
 }
 function vHolidays(){
   const td=today();
-  let h=`<div class="scroller"><button class="pill ${S.showTR?'on':''}" data-act="htr">🇹🇷 ${S.lang==='ru'?'Турция':'Turkey'}</button><button class="pill ${S.showRU?'on':''}" data-act="hru">🇷🇺 ${S.lang==='ru'?'Россия':'Russia'}</button></div>`;
+  let h=`<div class="scroller"><button class="pill ${S.showTR?'on':''}" data-act="htr">🇹🇷 ${S.lang==='ru'?'Турция':'Turkey'}</button><button class="pill ${S.showRU?'on':''}" data-act="hru">🇷🇺 ${S.lang==='ru'?'Россия':'Russia'}</button><button class="pill ${S.showFB!==false?'on':''}" data-act="hfb">⚽ Fenerbahçe</button><button class="pill ${S.showBB!==false?'on':''}" data-act="hbb">🏀 Fenerbahçe</button></div>`;
+  const sp=sportsIn(td,addD(td,400));
+  if(sp.length){h+=`<div class="sec">⚽🏀 Fenerbahçe <span class="n">${sp.length}</span></div>`+list(sp.slice(0,S.spAll?999:8).map(x=>`<div class="row" data-act="holtask" data-d="${x.d}" data-n="${esc(hName(x))}"><span style="font-size:18px;min-width:26px">${flag(x)}</span><div class="rbody"><div class="rt">${esc(hName(x).split(' · ')[0])}</div><div class="rm"><span>${esc(fDay(x.d))}</span><span>🕑 ${esc(x.t||'—')}</span><span>${esc(hName(x).split(' · ')[2]||'')}</span><span>${t('inDays')(diff(td,x.d))}</span></div></div></div>`))+(sp.length>8&&!S.spAll?`<button class="addbtn" data-act="spall">${S.lang==='ru'?'Показать все матчи':'Show all matches'} (${sp.length})</button>`:'');}
   if(S.mydays.length){
     h+=`<div class="sec">${t('myDays')}</div>`+list(S.mydays.slice().sort((a,b)=>{const ya=`${a.md}`<td.slice(5)?1:0,yb=`${b.md}`<td.slice(5)?1:0;return ya-yb||(a.md<b.md?-1:1)}).map(m=>{
       let y=+td.slice(0,4);if(m.md<td.slice(5))y++;const d=`${y}-${m.md}`;const age=m.y?y-m.y:0;
       return `<div class="row" data-act="myday" data-id="${m.id}"><span style="font-size:20px">🎂</span><div class="rbody"><div class="rt">${esc(m.name)}</div><div class="rm"><span>${esc(fmt(d,{day:'numeric',month:'long'}))}</span>${age>0?`<span>${t('ageN')(age)}</span>`:''}<span class="badge soon">${t('inDays')(diff(td,d))}</span></div></div></div>`}));
   }
   h+=`<button class="addbtn" data-act="newmyday">${t('addMyDay')}</button>`;
-  const end=addD(td,365);const hs=holsIn(td,end).filter(x=>x.c!=='me');
+  const end=addD(td,365);const hs=holsIn(td,end).filter(x=>x.c!=='me'&&!x.sport);
   let curM='';
   h+=`<div class="sec">${t('all12')}</div>`;
   let buf=[];
@@ -1001,7 +1015,10 @@ V.addEventListener('click',e=>{
    case 'newlesson':lessonSheet();break;
    case 'htr':S.showTR=!S.showTR;save();render();break;
    case 'hru':S.showRU=!S.showRU;save();render();break;
-   case 'holtask':taskSheet(null,{date:el.dataset.d,title:'🎁 '+el.dataset.n,cat:'personal'});break;
+   case 'hfb':S.showFB=S.showFB===false;save();render();break;
+   case 'hbb':S.showBB=S.showBB===false;save();render();break;
+   case 'spall':S.spAll=true;render();break;
+   case 'holtask':taskSheet(null,{date:el.dataset.d,title:(el.dataset.n.includes('Fenerbahçe')?'':'🎁 ')+el.dataset.n,cat:'personal'});break;
    case 'myday':myDaySheet(id);break;
    case 'newmyday':myDaySheet();break;
    case 'signin':doSignIn();break;
