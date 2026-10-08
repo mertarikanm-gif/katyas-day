@@ -194,12 +194,13 @@ main{padding:4px 16px calc(var(--sab) + 110px)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script>
 'use strict';
 /* ================= i18n ================= */
 const T = {
- ru:{today:'Сегодня',week:'Неделя',all:'Все',lessons:'Уроки',holidays:'Праздники',
+ ru:{notif:'Уведомления',notifOn:'Включены на этом телефоне: 08:45 — план на день (и матч Fenerbahçe), 16:00 — что осталось, а также просьбы от Мерта.',notifOff:'Выключены. Включите, чтобы получать план дня в 08:45, остаток дел в 16:00 и просьбы Мерта.',notifBtn:'🔔 Включить уведомления',notifNeedHome:'Уведомления работают только в приложении с экрана «Домой» (iOS 16.4+).',notifDenied:'Уведомления запрещены. Включите: Настройки iPhone → Уведомления → Katya’s Day.',notifOk:'🔔 Уведомления включены',notifTest:'Отправить тест',moveTitle:'Перенести на завтра',moveBtn:'Перенести',moveNone:'Все дела на сегодня сделаны 🎉',moved:'Перенесено на завтра: ',today:'Сегодня',week:'Неделя',all:'Все',lessons:'Уроки',holidays:'Праздники',
   overdue:'Просрочено',noDate:'Без даты',done:'Выполнено',active:'Активные',tomorrow:'Завтра',soon:'Скоро',
   newTask:'Новая задача',editTask:'Задача',titlePh:'Что нужно сделать?',category:'Категория',date:'Дата',time:'Время',
   notes:'Заметка',notesPh:'Подробности…',important:'Важно',repeat:'Повтор',rNone:'Нет',rDaily:'День',rWeekly:'Неделя',rMonthly:'Месяц',
@@ -222,7 +223,7 @@ const T = {
   bekliyor:'ждёт',onay:'принято',red:'отклонено',noReqs:'Просьб пока нет. Здесь видно, что Мерт принял или отклонил.',needLogin:'Сначала войдите (Настройки → Аккаунт)',
   calAdd:'📅 В календарь',calNeedDate:'Сначала укажите дату',family:'Семья',famPh:'Добавить в общий список…',famTxt:'Общий список семьи — его видит и Мерт.',
   noVoice:'Голосовой ввод тут недоступен — нажмите 🎤 на клавиатуре',listening:'Говорите…',mertNote:'Мерт',reqApproved:'✅ Мерт принял: ',reqRejected:'❌ Мерт отклонил: ',endTime:'До (время)',fromMert:'От Мерта',myReqs:'Мои просьбы Мерту',accept:'✓ Принять',decline:'Отклонить',newFromMert:'📨 Мерт: ',declineAsk:'Короткий комментарий для Мерта (необязательно):',endErr:'Время окончания раньше начала',accepted:'Добавлено в ваши задачи — выберите день/время',myNote:'Мой ответ'},
- en:{today:'Today',week:'Week',all:'All',lessons:'Lessons',holidays:'Holidays',
+ en:{notif:'Notifications',notifOn:'On for this phone: 08:45 — today’s plan (plus any Fenerbahçe match), 16:00 — what’s left, and requests from Mert.',notifOff:'Off. Turn on to get your day plan at 08:45, what’s left at 16:00 and Mert’s requests.',notifBtn:'🔔 Turn on notifications',notifNeedHome:'Notifications only work in the app opened from the Home Screen (iOS 16.4+).',notifDenied:'Notifications are blocked. Enable them in iPhone Settings → Notifications → Katya’s Day.',notifOk:'🔔 Notifications on',notifTest:'Send test',moveTitle:'Move to tomorrow',moveBtn:'Move',moveNone:'Everything for today is done 🎉',moved:'Moved to tomorrow: ',today:'Today',week:'Week',all:'All',lessons:'Lessons',holidays:'Holidays',
   overdue:'Overdue',noDate:'No date',done:'Done',active:'Active',tomorrow:'Tomorrow',soon:'Coming up',
   newTask:'New task',editTask:'Task',titlePh:'What needs to be done?',category:'Category',date:'Date',time:'Time',
   notes:'Note',notesPh:'Details…',important:'Important',repeat:'Repeat',rNone:'None',rDaily:'Day',rWeekly:'Week',rMonthly:'Month',
@@ -749,6 +750,7 @@ function settingsSheet(){
    <div class="fgroup">${CL.user?`<div class="f"><label>${esc(CL.user.email||'')}</label><span style="color:var(--ok);font-size:13px">☁︎ ${t('synced')}</span></div>
      <div class="f"><button id="sgOut" style="color:#E0454F;font-weight:600">${t('signOut')}</button></div>`
     :`<div class="f"><label>${t('localOnly')}</label></div>${CL.on?`<div class="f"><button id="sgIn" style="color:var(--accent);font-weight:600">${t('signIn')}</button></div>`:''}`}</div>
+   ${CL.user?notifBlock():''}
    <div class="sec">${t('categories')}</div>
    <div class="fgroup" id="catList">${S.cats.map(c=>`<div class="f" data-cedit="${c.id}"><i class="dot" style="--c:${c.c};width:12px;height:12px;border-radius:6px"></i><span style="flex:1">${esc(catName(c))}</span><span style="color:var(--ink3)">›</span></div>`).join('')}
     <div class="f"><button id="addCat" style="color:var(--accent);font-weight:600">${t('addCat')}</button></div></div>
@@ -756,7 +758,7 @@ function settingsSheet(){
    <div class="fgroup"><div class="f"><button id="exp" style="color:var(--accent);font-weight:600">⬆︎ ${t('exportB')}</button></div>
     <div class="f"><button id="imp" style="color:var(--accent);font-weight:600">⬇︎ ${t('importB')}</button><input type="file" id="impF" accept="application/json,.json" style="display:none"></div></div>
    <div class="sec">${t('install')}</div><div class="note">${t('installTxt')}</div>
-   <div class="note" style="color:var(--ink3);margin-top:10px">Katya's Day · v2.1</div>`;
+   <div class="note" style="color:var(--ink3);margin-top:10px">Katya's Day · v2.2</div>`;
   openSheet(html,el=>{
     const $=q=>el.querySelector(q);
     el.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.l;save();render();settingsSheet()});
@@ -768,6 +770,7 @@ function settingsSheet(){
     $('#exp').onclick=exportData;
     const so=$('#sgOut');if(so)so.onclick=()=>{if(confirm(t('signOut')+'?')){firebase.auth().signOut();S.skipCloud=true;saveLocal();closeSheet()}};
     const si=$('#sgIn');if(si)si.onclick=()=>{S.skipCloud=false;saveLocal();closeSheet();render()};
+    const nb=$('#notifOn');if(nb)nb.onclick=()=>notifEnable(true);
     $('#imp').onclick=()=>$('#impF').click();
     $('#impF').onchange=e=>importData(e.target.files[0]);
     $('[data-x="save"]').onclick=()=>{closeSheet();render()};
@@ -808,6 +811,55 @@ function importData(file){
   r.readAsText(file);
 }
 
+
+/* ================= notifications (FCM web push) + move-to-tomorrow ================= */
+const VAPID='BBldOHzV4kFa76yVZGI-zbdARcvcM5CFayUasRfCzUYCFkizCdvdRDBLIlqyploZg3bI96z9_zkooQJ3e2Fy5MI';
+const notifOK=()=>typeof Notification!=='undefined'&&'serviceWorker' in navigator&&'PushManager' in window;
+const notifState=()=>!notifOK()?'na':Notification.permission==='denied'?'denied':(Notification.permission==='granted'&&localStorage.getItem('katya.notif')==='1')?'on':'off';
+function notifBlock(){
+  const st=notifState();
+  const txt={na:t('notifNeedHome'),denied:t('notifDenied'),on:t('notifOn'),off:t('notifOff')}[st];
+  return `<div class="sec">🔔 ${t('notif')}</div><div class="fgroup"><div class="f"><label style="font-size:13px;line-height:1.4">${esc(txt)}</label></div>
+   ${st==='off'?`<div class="f"><button id="notifOn" style="color:var(--accent);font-weight:600">${t('notifBtn')}</button></div>`:''}</div>`;
+}
+async function notifEnable(ask){
+  if(!notifOK()||!CL.user||typeof firebase==='undefined'||!firebase.messaging)return;
+  try{
+    if(ask){const p=await Notification.requestPermission();if(p!=='granted'){toast(t('notifDenied'));if(sheetEl)settingsSheet();return}}
+    else if(Notification.permission!=='granted')return;
+    const reg=await navigator.serviceWorker.ready;
+    const token=await firebase.messaging().getToken({vapidKey:VAPID,serviceWorkerRegistration:reg});
+    if(!token)throw new Error('token');
+    let h=0;for(let i=0;i<token.length;i++)h=((h*31)+token.charCodeAt(i))>>>0;
+    await CL.db.collection('users').doc(CL.user.uid).collection('cihaz').doc('c'+h.toString(36)).set({token,ua:navigator.userAgent.slice(0,160),tur:'telefon',app:'katya',ts:Date.now()});
+    try{localStorage.setItem('katya.notif','1')}catch(e){}
+    if(ask){toast(t('notifOk'));if(sheetEl)settingsSheet()}
+  }catch(e){if(ask)toast('⚠️ '+(e.code||e.message||e))}
+}
+function moveSheet(){
+  const td=today(),tm=addD(td,1);
+  const L=S.tasks.filter(x=>!x.done&&x.date&&x.date<=td).sort((a,b)=>(a.date<b.date?-1:a.date>b.date?1:byTime(a,b)));
+  const sel=new Set(L.map(x=>x.id));
+  const html=head(t('moveTitle'),t('moveBtn'))+(L.length?`<div class="fgroup">${L.map(x=>{const c=cat(x.cat);
+    return `<div class="f" data-mv="${x.id}" style="gap:10px"><button type="button" class="chk on" style="--c:${c.c};pointer-events:none"></button><span style="flex:1">${esc(x.title)}${x.time?` <span style="color:var(--ink3);font-size:13px">🕑 ${esc(x.time+(x.end?'–'+x.end:''))}</span>`:''}${x.date<td?` <span class="late" style="font-size:12px">${esc(fDay(x.date))}</span>`:''}</span></div>`}).join('')}</div>`
+    :`<div class="note">${t('moveNone')}</div>`);
+  openSheet(html,el=>{
+    el.querySelector('[data-x="cancel"]').onclick=()=>closeSheet();
+    el.querySelectorAll('[data-mv]').forEach(r=>r.onclick=()=>{const id=r.dataset.mv;sel.has(id)?sel.delete(id):sel.add(id);r.querySelector('.chk').classList.toggle('on',sel.has(id))});
+    el.querySelector('[data-x="save"]').onclick=()=>{let n=0;
+      for(const x of S.tasks)if(sel.has(x.id)){x.date=tm;n++}
+      if(n){save();render();toast(t('moved')+n)}closeSheet()};
+  });
+}
+function hashRoute(){
+  const h=location.hash;if(!h||h.length<2)return;
+  if(h==='#move'){closeSheet(true);moveSheet()}
+  else if(h==='#reqs'&&CL.user){closeSheet(true);reqsSheet()}
+  else return;
+  try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+}
+window.addEventListener('hashchange',hashRoute);
+
 /* ================= cloud (Firebase — TERM ile aynı proje) ================= */
 const KUTU='aile/istekler/kutu', ORTAK='aile/ortak/liste', MERT_UID='Dk3WJraGS0cgD6v0M1DFrPipUsF3';
 const CL={on:false,user:null,db:null,unsub:[],reqs:[],inc:[],fam:[],pushT:null,err:'',ready:false};
@@ -822,6 +874,7 @@ function cloudInit(){
     CL.ready=true;CL.unsub.forEach(f=>{try{f()}catch(e){}});CL.unsub=[];CL.user=u;CL.reqs=[];CL.inc=[];CL.fam=[];
     if(u)cloudBind(u);
     render();
+    if(u){setTimeout(hashRoute,900);notifEnable(false)}
   });
 }
 const stateRef=()=>CL.db.collection('users').doc(CL.user.uid).collection('katya').doc('state');
@@ -1067,6 +1120,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&today()!=
 
 render();
 cloudInit();
+if(!(typeof firebase!=='undefined'&&window.IZO_FIREBASE))hashRoute();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
 </body>
