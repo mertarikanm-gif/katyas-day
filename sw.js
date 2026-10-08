@@ -1,6 +1,7 @@
-const V='katya-v5';
+const V='katya-v6';
 const FILES=['./','index.html','manifest.json','icon-180.png','icon-192.png','icon-512.png','firebase-config.js'];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(FILES)));self.skipWaiting()});
+// tek dosya eksik/erişilemez olsa bile kurulum başarısız olmasın (yoksa bildirim için sw hiç aktifleşmez)
+self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>Promise.all(FILES.map(f=>c.add(f).catch(()=>{})))));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x)))));self.clients.claim()});
 // network-first for the page (so updates arrive), cache fallback offline
 self.addEventListener('fetch',e=>{

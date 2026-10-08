@@ -758,7 +758,7 @@ function settingsSheet(){
    <div class="fgroup"><div class="f"><button id="exp" style="color:var(--accent);font-weight:600">⬆︎ ${t('exportB')}</button></div>
     <div class="f"><button id="imp" style="color:var(--accent);font-weight:600">⬇︎ ${t('importB')}</button><input type="file" id="impF" accept="application/json,.json" style="display:none"></div></div>
    <div class="sec">${t('install')}</div><div class="note">${t('installTxt')}</div>
-   <div class="note" style="color:var(--ink3);margin-top:10px">Katya's Day · v2.2</div>`;
+   <div class="note" style="color:var(--ink3);margin-top:10px">Katya's Day · v2.3</div>`;
   openSheet(html,el=>{
     const $=q=>el.querySelector(q);
     el.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{S.lang=b.dataset.l;save();render();settingsSheet()});
@@ -770,7 +770,7 @@ function settingsSheet(){
     $('#exp').onclick=exportData;
     const so=$('#sgOut');if(so)so.onclick=()=>{if(confirm(t('signOut')+'?')){firebase.auth().signOut();S.skipCloud=true;saveLocal();closeSheet()}};
     const si=$('#sgIn');if(si)si.onclick=()=>{S.skipCloud=false;saveLocal();closeSheet();render()};
-    const nb=$('#notifOn');if(nb)nb.onclick=()=>notifEnable(true);
+    const nb=$('#notifOn');if(nb)nb.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();notifEnable(true)});
     $('#imp').onclick=()=>$('#impF').click();
     $('#impF').onchange=e=>importData(e.target.files[0]);
     $('[data-x="save"]').onclick=()=>{closeSheet();render()};
@@ -820,21 +820,35 @@ function notifBlock(){
   const st=notifState();
   const txt={na:t('notifNeedHome'),denied:t('notifDenied'),on:t('notifOn'),off:t('notifOff')}[st];
   return `<div class="sec">🔔 ${t('notif')}</div><div class="fgroup"><div class="f"><label style="font-size:13px;line-height:1.4">${esc(txt)}</label></div>
-   ${st==='off'?`<div class="f"><button id="notifOn" style="color:var(--accent);font-weight:600">${t('notifBtn')}</button></div>`:''}</div>`;
+   ${st==='off'?`<div class="f"><button id="notifOn" type="button" style="color:var(--accent);font-weight:600;width:100%;text-align:left;padding:6px 0;touch-action:manipulation">${t('notifBtn')}</button></div>`:''}</div>`;
 }
+const withTO=(pr,ms,lbl)=>Promise.race([pr,new Promise((_,j)=>setTimeout(()=>j(new Error(lbl+' timeout')),ms))]);
+function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>no(new Error('script'));document.head.append(s)})}
+let notifBusy=false;
 async function notifEnable(ask){
-  if(!notifOK()||!CL.user||typeof firebase==='undefined'||!firebase.messaging)return;
+  const say=m=>{if(ask)toast(m)};
+  if(ask&&notifBusy)return;
+  if(!notifOK()){say(t('notifNeedHome'));return}
+  if(!CL.user){say(t('signIn'));return}
+  const btn=document.getElementById('notifOn');
+  if(ask)notifBusy=true;if(btn&&ask){btn.disabled=true;btn.textContent='⏳ …'}
   try{
-    if(ask){const p=await Notification.requestPermission();if(p!=='granted'){toast(t('notifDenied'));if(sheetEl)settingsSheet();return}}
+    // izin isteği MUTLAKA dokunuşla aynı anda (iOS) — başka await'ten önce
+    if(ask){const p=await Notification.requestPermission();if(p!=='granted'){say(t('notifDenied'));return}}
     else if(Notification.permission!=='granted')return;
-    const reg=await navigator.serviceWorker.ready;
-    const token=await firebase.messaging().getToken({vapidKey:VAPID,serviceWorkerRegistration:reg});
-    if(!token)throw new Error('token');
+    if(typeof firebase==='undefined')throw new Error('firebase');
+    if(!firebase.messaging)await withTO(loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js'),15000,'sdk');
+    let reg=await navigator.serviceWorker.getRegistration();
+    if(!reg)reg=await navigator.serviceWorker.register('sw.js');
+    reg=await withTO(navigator.serviceWorker.ready,15000,'sw');
+    const token=await withTO(firebase.messaging().getToken({vapidKey:VAPID,serviceWorkerRegistration:reg}),25000,'token');
+    if(!token)throw new Error('token empty');
     let h=0;for(let i=0;i<token.length;i++)h=((h*31)+token.charCodeAt(i))>>>0;
-    await CL.db.collection('users').doc(CL.user.uid).collection('cihaz').doc('c'+h.toString(36)).set({token,ua:navigator.userAgent.slice(0,160),tur:'telefon',app:'katya',ts:Date.now()});
+    await withTO(CL.db.collection('users').doc(CL.user.uid).collection('cihaz').doc('c'+h.toString(36)).set({token,ua:navigator.userAgent.slice(0,160),tur:'telefon',app:'katya',ts:Date.now()}),15000,'save');
     try{localStorage.setItem('katya.notif','1')}catch(e){}
-    if(ask){toast(t('notifOk'));if(sheetEl)settingsSheet()}
-  }catch(e){if(ask)toast('⚠️ '+(e.code||e.message||e))}
+    say(t('notifOk'));
+  }catch(e){say('⚠️ '+(e.code||e.message||e));try{console.warn('notif',e)}catch(_){}}
+  finally{if(ask)notifBusy=false;if(ask&&sheetEl&&sheetEl.querySelector('#notifOn,#notifSt'))settingsSheet()}
 }
 function moveSheet(){
   const td=today(),tm=addD(td,1);
