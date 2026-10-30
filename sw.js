@@ -1,4 +1,4 @@
-const V='katya-v8';
+const V='katya-v9';
 const FILES=['./','index.html','manifest.json','icon-180.png','icon-192.png','icon-512.png','firebase-config.js'];
 // tek dosya eksik/erişilemez olsa bile kurulum başarısız olmasın (yoksa bildirim için sw hiç aktifleşmez)
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>Promise.all(FILES.map(f=>c.add(f).catch(()=>{})))));self.skipWaiting()});
